@@ -122,11 +122,11 @@ body {
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%) translateY(50px);
-    background: linear-gradient(135deg, #0d0d1a, #1a1a2e);
+    background: linear-gradient(90deg, #001111, #ffffff);
     color: #ffffff;
     padding: 18px 28px;
     border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.7);
+    box-shadow: 0 5px 20px #33ffff;
     display: none;
     align-items: center;
     gap: 20px;
@@ -141,6 +141,23 @@ body {
 @keyframes fadeOut {
     from { opacity: 1; transform: translateX(-50%) translateY(0); }
     to { opacity: 0; transform: translateX(-50%) translateY(50px); }
+}
+.cookie-banner a {
+    color: #111;
+    text-decoration: none;
+}
+.cookie-banner a:hover {
+    color: #33ffff;
+    font-weight: 700;
+}
+.cookie-banner button {
+    background-color: #111;
+    color: #fff;
+    border-radius: 12px;
+}
+.cookie-banner button:hover {
+    background-color: #33ffff;
+    color: #111;
 }
 .cookie-banner.show {
     display: flex;
