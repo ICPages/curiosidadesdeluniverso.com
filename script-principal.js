@@ -1,3 +1,5 @@
+document.addEventListener('DOMContentLoaded', () => {
+
 // Preguntas
 const preguntas = [
     // Animales y Naturaleza
@@ -133,148 +135,160 @@ const preguntas = [
     { pregunta: "¿Qué es la robótica avanzada?", categoria: "Tecnología y Futuro", enlace: "que-es-la-robotica-avanzada.html" }
 ];
 
-// Three.js - Galaxy
-let scene, camera, renderer, stars;
-function initGalaxy() {
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / 600, 0.1, 1000);
-    camera.position.z = 5;
-    renderer = new THREE.WebGLRenderer({ alpha: true });
-    renderer.setSize(window.innerWidth, 600);
-    document.getElementById('galaxyContainer').appendChild(renderer.domElement);
-    const starGeometry = new THREE.BufferGeometry();
-    const starCount = 2000;
-    const positions = [];
-    for(let i=0; i<starCount; i++){
-        positions.push((Math.random()-0.5)*50);
-        positions.push((Math.random()-0.5)*50);
-        positions.push((Math.random()-0.5)*50);
+/// Variables principales
+    let currentPage = 1;
+    const preguntasPorPagina = 10;
+    let filteredPreguntas = preguntas.slice(); // copia completa
+    const preguntasContainer = document.getElementById('preguntas-list');
+    const searchInput = document.getElementById('searchInput');
+
+    // --- Three.js - Galaxy ---
+    let scene, camera, renderer, stars;
+    function initGalaxy() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / 600, 0.1, 1000);
+        camera.position.z = 5;
+        renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setSize(window.innerWidth, 600);
+        const container = document.getElementById('galaxyContainer');
+        if(container) container.appendChild(renderer.domElement);
+
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 2000;
+        const positions = [];
+        for(let i=0; i<starCount; i++){
+            positions.push((Math.random()-0.5)*50);
+            positions.push((Math.random()-0.5)*50);
+            positions.push((Math.random()-0.5)*50);
+        }
+        starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
+        const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.05 });
+        stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+        animateGalaxy();
     }
-    starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
-    const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.05 });
-    stars = new THREE.Points(starGeometry, starMaterial);
-    scene.add(stars);
-
-    animateGalaxy();
-}
-function animateGalaxy(){
-    requestAnimationFrame(animateGalaxy);
-    stars.rotation.y += 0.0008;
-    stars.rotation.x += 0.0005;
-    renderer.render(scene, camera);
-}
-initGalaxy();
-
-// Buscador
-const searchInput = document.getElementById('searchInput');
-searchInput.addEventListener('input', e=>{
-    const query = e.target.value.toLowerCase();
-    filteredPreguntas = preguntas.filter(p=>p.pregunta.toLowerCase().includes(query));
-    currentPage = 1;
-    renderPreguntas(filteredPreguntas,currentPage);
-});
-
-// Preguntas Sugeridas (10 al azar)
-function mezclarYSeleccionar(array, n) {
-    const copia = [...array];
-    for (let i = copia.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copia[i], copia[j]] = [copia[j], copia[i]];
+    function animateGalaxy(){
+        requestAnimationFrame(animateGalaxy);
+        stars.rotation.y += 0.0008;
+        stars.rotation.x += 0.0005;
+        renderer.render(scene, camera);
     }
-    return copia.slice(0, n);
-}
-const preguntasAlAzar = mezclarYSeleccionar(preguntas, 10);
-renderPreguntas(preguntasAlAzar, 1);
-renderPreguntas(preguntasAlAzar, 1);
+    initGalaxy();
 
-// Paginación
-let currentPage = 1;
-const preguntasPorPagina = 10;
-let filteredPreguntas = preguntas.slice(0,10); // Mostrar 10 más buscadas al inicio
-const preguntasContainer = document.getElementById('preguntas-list');
-function renderPreguntas(lista, page=1){
-    preguntasContainer.innerHTML = '';
-    const start = (page-1)*preguntasPorPagina;
-    const end = start + preguntasPorPagina;
-    const paginated = lista.slice(start,end);
-    paginated.forEach(item=>{
-        const div = document.createElement('div');
-        div.className = 'col-md-6';
-        div.innerHTML = `<div class="card p-3">
-            <h5><a href="${item.enlace}" class="text-decoration-none text-white">${item.pregunta}</a></h5>
-            <small class="text-muted">${item.categoria}</small>
-        </div>`;
-        preguntasContainer.appendChild(div);
+    // --- Función para mezclar y seleccionar n preguntas ---
+    function mezclarYSeleccionar(array, n) {
+        const copia = [...array];
+        for (let i = copia.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copia[i], copia[j]] = [copia[j], copia[i]];
+        }
+        return copia.slice(0, n);
+    }
+
+    // --- Render Preguntas ---
+    function renderPreguntas(lista, page = 1){
+        if(!preguntasContainer) return;
+        preguntasContainer.innerHTML = '';
+        const start = (page-1)*preguntasPorPagina;
+        const end = start + preguntasPorPagina;
+        const paginated = lista.slice(start,end);
+        paginated.forEach(item=>{
+            const div = document.createElement('div');
+            div.className = 'col-md-6';
+            div.innerHTML = `<div class="card p-3">
+                <h5><a href="${item.enlace}" class="text-decoration-none text-white">${item.pregunta}</a></h5>
+                <small class="text-muted">${item.categoria}</small>
+            </div>`;
+            preguntasContainer.appendChild(div);
+        });
+        renderPaginacion(lista.length,page);
+    }
+
+    // --- Paginación ---
+    function renderPaginacion(totalItems, page) {
+        const totalPages = Math.ceil(totalItems / preguntasPorPagina);
+        if (totalPages <= 1) return;
+        let pagHTML = `<nav aria-label="Page navigation"><ul class="pagination justify-content-center mt-4">`;
+        pagHTML += page > 1
+            ? `<li class="page-item"><a class="page-link" href="#" data-page="${page - 1}">🡰</a></li>`
+            : `<li class="page-item disabled"><span class="page-link">🡰</span></li>`;
+
+        pagHTML += `<li class="page-item ${page === 1 ? 'active' : ''}"><a class="page-link" href="#" data-page="1">1</a></li>`;
+        if (page !== 1 && page !== totalPages) {
+            pagHTML += `<li class="page-item active"><a class="page-link" href="#" data-page="${page}">${page}</a></li>`;
+        }
+        if (totalPages !== 1) {
+            pagHTML += `<li class="page-item ${page === totalPages ? 'active' : ''}"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+        }
+        pagHTML += page < totalPages
+            ? `<li class="page-item"><a class="page-link" href="#" data-page="${page + 1}">🡲</a></li>`
+            : `<li class="page-item disabled"><span class="page-link">🡲</span></li>`;
+        pagHTML += `</ul></nav>`;
+        const existingPag = document.querySelector('.pagination');
+        if (existingPag) existingPag.remove();
+        preguntasContainer.insertAdjacentHTML('afterend', pagHTML);
+
+        document.querySelectorAll('.pagination a.page-link').forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                const newPage = parseInt(e.target.dataset.page);
+                if (!isNaN(newPage)) {
+                    currentPage = newPage;
+                    renderPreguntas(filteredPreguntas, currentPage);
+                    window.scrollTo({ top: 300, behavior: 'smooth' });
+                }
+            });
+        });
+    }
+
+    // --- Buscador ---
+    if(searchInput){
+        searchInput.addEventListener('input', e=>{
+            const query = e.target.value.toLowerCase();
+            filteredPreguntas = preguntas.filter(p=>p.pregunta.toLowerCase().includes(query));
+            currentPage = 1;
+            renderPreguntas(filteredPreguntas, currentPage);
+        });
+    }
+
+    // --- Filtro por Categoría ---
+    document.querySelectorAll('.category-sidebar .list-group-item').forEach(cat=>{
+        cat.addEventListener('click', e=>{
+            const categoria = e.target.innerText;
+            filteredPreguntas = preguntas.filter(p=>p.categoria===categoria);
+            currentPage=1;
+            renderPreguntas(filteredPreguntas,currentPage);
+        });
     });
-    renderPaginacion(lista.length,page);
-}
-function renderPaginacion(totalItems, page) {
-    const totalPages = Math.ceil(totalItems / preguntasPorPagina);
-    if (totalPages <= 1) return;
-    let pagHTML = `<nav aria-label="Page navigation"><ul class="pagination justify-content-center mt-4">`;
-    pagHTML += page > 1
-        ? `<li class="page-item"><a class="page-link" href="#" data-page="${page - 1}">🡰</a></li>`
-        : `<li class="page-item disabled"><span class="page-link">🡰</span></li>`;
 
-    pagHTML += `<li class="page-item ${page === 1 ? 'active' : ''}"><a class="page-link" href="#" data-page="1">1</a></li>`;
-    if (page !== 1 && page !== totalPages) {
-        pagHTML += `<li class="page-item active"><a class="page-link" href="#" data-page="${page}">${page}</a></li>`;
-    }
-    if (totalPages !== 1) {
-        pagHTML += `<li class="page-item ${page === totalPages ? 'active' : ''}"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
-    }
-    pagHTML += page < totalPages
-        ? `<li class="page-item"><a class="page-link" href="#" data-page="${page + 1}">🡲</a></li>`
-        : `<li class="page-item disabled"><span class="page-link">🡲</span></li>`;
-    pagHTML += `</ul></nav>`;
-    const existingPag = document.querySelector('.pagination');
-    if (existingPag) existingPag.remove();
-    preguntasContainer.insertAdjacentHTML('afterend', pagHTML);
-    document.querySelectorAll('.pagination a.page-link').forEach(link => {
-        link.addEventListener('click', e => {
-            e.preventDefault();
-            const newPage = parseInt(e.target.dataset.page);
-            if (!isNaN(newPage)) {
-                currentPage = newPage;
-                renderPreguntas(filteredPreguntas, currentPage);
-                window.scrollTo({ top: 300, behavior: 'smooth' });
+    // --- Botón de Compartir ---
+    const shareBtn = document.getElementById('shareBtn');
+    if(shareBtn){
+        shareBtn.addEventListener('click', () => {
+            if(navigator.share){
+                navigator.share({
+                    title: 'Curiosidades del Universo',
+                    url: window.location.href
+                });
+            } else {
+                alert('Tu navegador no soporta compartir automáticamente');
             }
         });
-    });
-}
-
-// Filtro por Categoría
-document.querySelectorAll('.category-sidebar .list-group-item').forEach(cat=>{
-    cat.addEventListener('click', e=>{
-        const categoria = e.target.innerText;
-        filteredPreguntas = preguntas.filter(p=>p.categoria===categoria);
-        currentPage=1;
-        renderPreguntas(filteredPreguntas,currentPage);
-    });
-});
-
-// Botón de Compartir
-document.getElementById('shareBtn').addEventListener('click', () => {
-    if(navigator.share){
-        navigator.share({
-            title: 'Curiosidades del Universo',
-            url: window.location.href
-        });
-    } else {
-        alert('Tu navegador no soporta compartir automáticamente');
     }
-});
 
-// Banner de Cookies
-document.addEventListener('DOMContentLoaded', () => {
+    // --- Banner de Cookies ---
     const banner = document.getElementById('cookieBanner');
     const acceptBtn = document.getElementById('acceptCookies');
-    if (!banner || !acceptBtn) return;
-    if (!localStorage.getItem('cookiesAccepted')) {
+    if (banner && acceptBtn && !localStorage.getItem('cookiesAccepted')) {
         banner.style.display = 'flex';
+        acceptBtn.addEventListener('click', () => {
+            localStorage.setItem('cookiesAccepted', 'true');
+            banner.style.display = 'none';
+        });
     }
-    acceptBtn.addEventListener('click', () => {
-        localStorage.setItem('cookiesAccepted', 'true');
-        banner.style.display = 'none';
-    });
+
+    // --- Render inicial con 10 preguntas al azar ---
+    const preguntasAlAzar = mezclarYSeleccionar(preguntas, 10);
+    renderPreguntas(preguntasAlAzar, 1);
+
 });
