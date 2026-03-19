@@ -180,8 +180,8 @@ body {
 
 /* Google AdSense */
 .ad-placeholder {
-    background-color: #e2e8f0;
-    color: #1a202c;
+    background: linear-gradient(225deg, #5933cf, #41e027);
+    color: #fff;
     display: flex;
     justify-content: center;
     align-items: center;
